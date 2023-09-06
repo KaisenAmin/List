@@ -299,6 +299,204 @@ int main()
 
 ```
 
+### Example 1: Basic Adding and Getting
+
+This example simply adds three integers to a list and retrieves them.
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+#include "List.h"
+
+int main() {
+    List* myList = createList();
+    int numbers[3] = {5, 10, 15};
+    
+    for (int i = 0; i < 3; i++) {
+        int* num = malloc(sizeof(int));
+        *num = numbers[i];
+        myList->add(myList, num);
+    }
+    
+    printf("Elements in list: ");
+    for (int i = 0; i < myList->count(myList); i++) {
+        printf("%d ", *((int*)myList->get(myList, i)));
+    }
+    printf("\n");
+    
+    clearList(myList);
+    return 0;
+}
+```
+
+### Example 2: Using `clear`
+
+This example adds items to the list and then clears the list.
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+#include "List.h"
+
+int main() 
+{
+    List* myList = createList();
+    int numbers[3] = {5, 10, 15};
+    
+    for (int i = 0; i < 3; i++) 
+    {
+        int* num = malloc(sizeof(int));
+        *num = numbers[i];
+        myList->add(myList, num);
+    }
+    
+    myList->clear(myList);
+    printf("List cleared, count: %d\n", myList->count(myList));
+    
+    return 0;
+}
+```
+
+### Example 3: Using `count`
+
+This example shows how to count the number of items in a list.
+
+```c
+//... (skipping standard headers for brevity)
+int main() 
+{
+    List* myList = createList();
+    printf("List count: %d\n", myList->count(myList));
+    return 0;
+}
+```
+
+### Example 4: Using `copy`
+
+This example demonstrates how to copy a list.
+
+```c
+//... (skipping standard headers for brevity)
+int main() 
+{
+    List* myList = createList();
+    int* num = malloc(sizeof(int));
+    *num = 5;
+    myList->add(myList, num);
+
+    List* copiedList = myList->copy(myList);
+    printf("Copied value: %d\n", *((int*)copiedList->get(copiedList, 0)));
+
+    clearList(myList);
+    clearList(copiedList);
+    return 0;
+}
+```
+
+### Example 5: Using `extend`
+
+This example shows how to extend a list with another list.
+
+```c
+//... (skipping standard headers for brevity)
+int main() 
+{
+    List* list1 = createList();
+    List* list2 = createList();
+    //... (Add some items to list1 and list2)
+    list1->extend(list1, list2);
+    //... (Print items in extended list1)
+    return 0;
+}
+```
+
+### Example 6: Using `insert`
+
+This example demonstrates how to insert an item at a specific index in the list.
+
+```c
+//... (skipping standard headers for brevity)
+int main() 
+{
+    List* myList = createList();
+    int* num = malloc(sizeof(int));
+    *num = 5;
+    myList->insert(myList, 0, num);
+    //... (Print items)
+    return 0;
+}
+```
+
+### Example 7: Using `pop`
+
+This example shows how to pop an item from a list.
+
+```c
+//... (skipping standard headers for brevity)
+int main() 
+{
+    List* myList = createList();
+    //... (Add some items)
+    int* popped = (int*) myList->pop(myList, 0);
+    //... (Do something with popped)
+    return 0;
+}
+```
+
+### Example 8: Using `remove`
+
+This example demonstrates how to remove a specific item from a list.
+
+```c
+//... (skipping standard headers for brevity)
+int main() 
+{
+    List* myList = createList();
+    int* num = malloc(sizeof(int));
+    *num = 5;
+
+    myList->add(myList, num);
+    myList->remove(myList, num);
+    //... (Check if removed)
+    return 0;
+}
+```
+
+### Example 9: Using `reverse`
+
+This example shows how to reverse the items in a list.
+
+```c
+//... (skipping standard headers for brevity)
+int main() 
+{
+    List* myList = createList();
+    //... (Add some items)
+    myList->reverse(myList);
+    //... (Print reversed items)
+    return 0;
+}
+```
+
+### Example 10: Using `sort`
+
+This example demonstrates how to sort the items in a list.
+
+```c
+//... (skipping standard headers for brevity)
+int main() 
+{
+    List* myList = createList();
+    //... (Add some items)
+    myList->sort(myList);
+    //... (Print sorted items)
+    return 0;
+}
+```
+
+These examples should provide a wide range of demonstrations for how to use your `List` struct and its associated methods.
+
+
 ## License
 
 This project is licensed under the MIT License.
