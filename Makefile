@@ -1,30 +1,19 @@
-# Compiler
 CC = gcc
-
-# Compiler Flags
-CFLAGS = -Wall
-
-# Executable name
+CFLAGS = -std=c11 -Wall -Wextra -Wpedantic -O2
 OUT = my_program
 
-# Object Files
-OBJS = List.o main.o
+all: $(OUT)
 
-all: $(OBJS)
-	$(CC) $(CFLAGS) -o $(OUT) $(OBJS)
+$(OUT): main.c List.c List.h
+	$(CC) $(CFLAGS) -o $@ main.c List.c
 
-# Compile List.c into List.o
-List.o: List.c
-	$(CC) $(CFLAGS) -c List.c
+tests/test_list: tests/test_list.c List.c List.h
+	$(CC) $(CFLAGS) -o $@ tests/test_list.c List.c
 
-# Compile main.c into main.o
-main.o: main.c
-	$(CC) $(CFLAGS) -c main.c
+test: tests/test_list
+	./tests/test_list
 
 clean:
-ifeq ($(OS),Windows_NT)
-	del *.o my_program.exe
-else
-	rm -f *.o my_program
-endif
+	rm -f *.o $(OUT) $(OUT).exe tests/test_list tests/test_list.exe
 
+.PHONY: all test clean

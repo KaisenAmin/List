@@ -28,6 +28,12 @@ The `List` library provides a dynamic array implementation in C. It supports com
     make clean
     ```
 
+6. To build and run the tests:
+
+    ```bash
+    make test
+    ```
+
 Make sure your `Makefile`, `List.c`, `List.h`, and `main.c` are all in the same directory. With this `Makefile`, running the `make` command will compile the code files and link them to produce an executable.
 
 ## API Documentation
@@ -197,6 +203,38 @@ reverseList(myList);
 sortList(myList);
 ```
 
+#### `void sortListBy(List* list, ListCompare compare)`
+
+- **Description**: Sorts the items with your own comparison function. The function receives two items and returns a negative, zero or positive value. The sort is stable.
+- **Parameters**:
+  - `list`: The list to sort.
+  - `compare`: The comparison function.
+
+##### Example
+
+```c
+int compareStrings(const void* a, const void* b)
+{
+    return strcmp(a, b);
+}
+
+sortListBy(myList, compareStrings);
+```
+
+#### `void clearList(List* list)`
+
+- **Description**: Removes all items from the list. The list itself stays usable.
+
+#### `void destroyList(List* list)`
+
+- **Description**: Frees the list. The items are owned by the caller and are not freed.
+
+##### Example
+
+```c
+destroyList(myList);
+```
+
 ## Examples
 
 ### Basic Operations
@@ -231,8 +269,8 @@ for (int i = 0; i < countItems(myList); i++)
 }
 printf("\n");
 
-// Clear the list
-clearList(myList);
+// Free the list
+destroyList(myList);
 ```
 
 ### Advanced Operations
@@ -291,8 +329,7 @@ int main()
     free(num1);
     free(num2);
     free(num3);
-    free(popped);
-    myList->clear(myList);
+    myList->destroy(myList);
 
     return 0;
 }
@@ -324,7 +361,7 @@ int main() {
     }
     printf("\n");
     
-    clearList(myList);
+    destroyList(myList);
     return 0;
 }
 ```
@@ -387,8 +424,9 @@ int main()
     List* copiedList = myList->copy(myList);
     printf("Copied value: %d\n", *((int*)copiedList->get(copiedList, 0)));
 
-    clearList(myList);
-    clearList(copiedList);
+    free(num);
+    destroyList(myList);
+    destroyList(copiedList);
     return 0;
 }
 ```

@@ -1,0 +1,5 @@
+*.exe
+*.o
+.vscode/
+my_program
+tests/test_list

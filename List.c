@@ -1,244 +1,249 @@
 #include "List.h"
+
+#include <stdbool.h>
 #include <string.h>
 
-/**
- * @brief Adds an item to the list.
- *
- * @param list The list to which the item will be added.
- * @param item The item to be added.
- */
-void addItem(List* list, void* item) 
+#define INITIAL_CAPACITY 4
+
+static bool reserve(List *list, int needed)
 {
-    if (list->size == list->capacity) 
+    if (needed <= list->capacity)
     {
-        list->capacity *= 2;
-        list->items = realloc(list->items, sizeof(void*) * list->capacity);
+        return true;
     }
-    list->items[list->size++] = item;
+    int capacity = list->capacity > 0 ? list->capacity : INITIAL_CAPACITY;
+    while (capacity < needed)
+    {
+        capacity *= 2;
+    }
+    void **items = realloc(list->items, (size_t)capacity * sizeof *items);
+    if (!items)
+    {
+        return false;
+    }
+    list->items = items;
+    list->capacity = capacity;
+    return true;
 }
 
-/**
- * @brief Retrieves an item from the list at a given index.
- *
- * @param list The list from which the item will be retrieved.
- * @param index The index of the item to retrieve.
- * @return A pointer to the item, or NULL if index is out of range.
- */
-void* getItem(List* list, int index) 
+static int compareInts(const void *first, const void *second)
 {
-    if (index < 0 || index >= list->size) 
+    if (!first || !second)
+    {
+        return (first != NULL) - (second != NULL);
+    }
+    int a = *(const int *)first;
+    int b = *(const int *)second;
+    return (a > b) - (a < b);
+}
+
+static void mergeSort(void **items, void **buffer, int count, ListCompare compare)
+{
+    if (count < 2)
+    {
+        return;
+    }
+    int middle = count / 2;
+    mergeSort(items, buffer, middle, compare);
+    mergeSort(items + middle, buffer, count - middle, compare);
+
+    int left = 0;
+    int right = middle;
+    int out = 0;
+    while (left < middle && right < count)
+    {
+        buffer[out++] = compare(items[right], items[left]) < 0 ? items[right++] : items[left++];
+    }
+    while (left < middle)
+    {
+        buffer[out++] = items[left++];
+    }
+    while (right < count)
+    {
+        buffer[out++] = items[right++];
+    }
+    memcpy(items, buffer, (size_t)count * sizeof *items);
+}
+
+void addItem(List *list, void *item)
+{
+    if (list && reserve(list, list->size + 1))
+    {
+        list->items[list->size++] = item;
+    }
+}
+
+void *getItem(List *list, int index)
+{
+    if (!list || index < 0 || index >= list->size)
     {
         return NULL;
     }
     return list->items[index];
 }
 
-/**
- * @brief Clears and frees all elements from the list.
- *
- * @param list The list to be cleared.
- */
-void clearList(List* list) 
+void clearList(List *list)
 {
-    free(list->items);
-    free(list);
-}
-
-/**
- * @brief Counts the number of items in the list.
- *
- * @param list The list whose items will be counted.
- * @return The number of items in the list.
- */
-int countItems(List* list)
-{
-    return list->size;
-}
-
-/**
- * @brief Creates a copy of the given list.
- *
- * @param original The list to be copied.
- * @return A new list containing all the elements of the original list.
- */
-List* copyList(List* original)
-{
-    List* copy = createList();
-    for (int i = 0; i < original->size; i++) 
+    if (list)
     {
-        copy->add(copy, original->get(original, i));
+        list->size = 0;
     }
+}
+
+int countItems(List *list)
+{
+    return list ? list->size : 0;
+}
+
+List *copyList(List *list)
+{
+    if (!list)
+    {
+        return NULL;
+    }
+    List *copy = createList();
+    if (!copy)
+    {
+        return NULL;
+    }
+    if (!reserve(copy, list->size))
+    {
+        destroyList(copy);
+        return NULL;
+    }
+    if (list->size > 0)
+    {
+        memcpy(copy->items, list->items, (size_t)list->size * sizeof *list->items);
+    }
+    copy->size = list->size;
     return copy;
 }
 
-/**
- * @brief Extends a list by appending all the items from another list.
- *
- * @param list The list to be extended.
- * @param other The list whose elements will be added to the first list.
- */
-void extendList(List* list, List* other)
+void extendList(List *list, List *other)
 {
-    for (int i = 0; i < other->size; i++) 
-    {
-        list->add(list, other->get(other, i));
-    }
-}
-
-/**
- * @brief Inserts an item at a specific index in the list.
- *
- * @param list The list in which the item will be inserted.
- * @param index The index at which to insert the item.
- * @param item The item to be inserted.
- */
-void insertItem(List* list, int index, void* item)
-{
-    if (index < 0 || index > list->size) 
+    if (!list || !other || other->size == 0)
     {
         return;
     }
-    
-    if (list->size == list->capacity) 
+    int count = other->size;
+    if (!reserve(list, list->size + count))
     {
-        list->capacity *= 2;
-        list->items = realloc(list->items, sizeof(void*) * list->capacity);
+        return;
     }
-    
-    // Shift elements down to make room for the new item
-    for (int i = list->size; i > index; i--) 
+    memcpy(list->items + list->size, other->items, (size_t)count * sizeof *list->items);
+    list->size += count;
+}
+
+void insertItem(List *list, int index, void *item)
+{
+    if (!list || index < 0 || index > list->size || !reserve(list, list->size + 1))
     {
-        list->items[i] = list->items[i - 1];
+        return;
     }
-    
-    // Insert new item
+    memmove(list->items + index + 1, list->items + index, (size_t)(list->size - index) * sizeof *list->items);
     list->items[index] = item;
     list->size++;
 }
 
-/**
- * @brief Removes and returns an item at a specific index from the list.
- *
- * @param list The list from which the item will be popped.
- * @param index The index of the item to be popped.
- * @return A pointer to the popped item, or NULL if index is out of range.
- */
-void* popItem(List* list, int index) 
+void *popItem(List *list, int index)
 {
-    if (index < 0 || index >= list->size) 
+    if (!list || index < 0 || index >= list->size)
     {
         return NULL;
     }
-
-    void* item = list->items[index];
-    memmove(&list->items[index], &list->items[index + 1], (list->size - index - 1) * sizeof(void*));
+    void *item = list->items[index];
+    memmove(list->items + index, list->items + index + 1, (size_t)(list->size - index - 1) * sizeof *list->items);
     list->size--;
-
     return item;
 }
 
-/**
- * @brief Removes the first occurrence of a specific item from the list.
- *
- * @param list The list from which the item will be removed.
- * @param item The item to be removed.
- */
-void removeItem(List* list, void* item) 
+void removeItem(List *list, void *item)
 {
-    for (int i = 0; i < list->size; i++) 
+    int index = indexItem(list, item);
+    if (index >= 0)
     {
-        if (list->items[i] == item) 
-        {
-            popItem(list, i);
-            return;
-        }
+        popItem(list, index);
     }
 }
 
-/**
- * @brief Reverses the order of items in the list.
- *
- * @param list The list to be reversed.
- */
-void reverseList(List* list) 
+void reverseList(List *list)
 {
-    for (int i = 0; i < list->size / 2; i++) 
+    for (int i = 0; list && i < list->size / 2; i++)
     {
-        void* temp = list->items[i];
-        list->items[i] = list->items[list->size - i - 1];
-        list->items[list->size - i - 1] = temp;
+        void *temp = list->items[i];
+        list->items[i] = list->items[list->size - 1 - i];
+        list->items[list->size - 1 - i] = temp;
     }
 }
 
-/**
- * @brief Comparison function for sorting.
- *
- * @param a Pointer to the first item to compare.
- * @param b Pointer to the second item to compare.
- * @return Negative, zero, or positive value, depending on the comparison.
- */
-int compare(const void* a, const void* b) 
+void sortListBy(List *list, ListCompare compare)
 {
-    // Dereference the pointers from void* to int*, then dereference the int* to get int
-    int int_a = *((int*) *((void**)a));
-    int int_b = *((int*) *((void**)b));
-
-    // Return comparison result
-    return (int_a > int_b) - (int_a < int_b);
-}
-
-/**
- * @brief Sorts the items in the list.
- *
- * @param list The list to be sorted.
- */
-void sortList(List* list) 
-{
-    qsort(list->items, list->size, sizeof(void*), compare);
-}
-
-/**
- * @brief Returns the index of the first occurrence of a specific item in the list.
- *
- * This function iterates through the list to find the first occurrence of the given item. 
- * It returns the index of that item if found.
- *
- * @param list The pointer to the List structure.
- * @param item The pointer to the item to search for.
- * @return The index of the first occurrence of the item, or -1 if the item is not found.
- */
-int indexItem(List* list, void* item) 
-{
-    for (int i = 0; i < list->size; i++) 
+    if (!list || !compare || list->size < 2)
     {
-        if (list->items[i] == item) 
+        return;
+    }
+    void **buffer = malloc((size_t)list->size * sizeof *buffer);
+    if (buffer)
+    {
+        mergeSort(list->items, buffer, list->size, compare);
+        free(buffer);
+    }
+}
+
+void sortList(List *list)
+{
+    sortListBy(list, compareInts);
+}
+
+int indexItem(List *list, void *item)
+{
+    for (int i = 0; list && i < list->size; i++)
+    {
+        if (list->items[i] == item)
         {
             return i;
         }
     }
-    return -1; // Return -1 if the item is not found
+    return -1;
 }
 
-/**
- * @brief Creates a new list.
- *
- * @return A pointer to the newly created list.
- */
-List* createList() 
+void destroyList(List *list)
 {
-    List* list = malloc(sizeof(List));
-    list->items = malloc(sizeof(void*) * 2);
-    list->size = 0;
-    list->capacity = 2;
+    if (list)
+    {
+        free(list->items);
+        free(list);
+    }
+}
+
+List *createList(void)
+{
+    List *list = calloc(1, sizeof *list);
+    if (!list)
+    {
+        return NULL;
+    }
+    list->items = malloc(INITIAL_CAPACITY * sizeof *list->items);
+    if (!list->items)
+    {
+        free(list);
+        return NULL;
+    }
+    list->capacity = INITIAL_CAPACITY;
+
     list->add = addItem;
     list->get = getItem;
     list->clear = clearList;
     list->count = countItems;
     list->copy = copyList;
+    list->extend = extendList;
+    list->insert = insertItem;
     list->pop = popItem;
     list->remove = removeItem;
     list->reverse = reverseList;
     list->sort = sortList;
+    list->sortBy = sortListBy;
     list->index = indexItem;
+    list->destroy = destroyList;
     return list;
 }

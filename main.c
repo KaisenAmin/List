@@ -2,26 +2,42 @@
 #include <stdlib.h>
 #include "List.h"
 
-int main() 
+static void printList(const char *title, List *list)
 {
-    List* myList = createList();
-    int numbers[3] = {5, 10, 15};
-    
-    for (int i = 0; i < 3; i++) 
+    printf("%s: ", title);
+    for (int i = 0; i < list->count(list); i++)
     {
-        int* num = malloc(sizeof(int));
-        *num = numbers[i];
-        myList->add(myList, num);
+        printf("%d ", *(int *)list->get(list, i));
     }
-    
-    printf("Elements in list: ");
-    for (int i = 0; i < myList->count(myList); i++) 
-    {
-        printf("%d ", *((int*)myList->get(myList, i)));
-    }
-    
     printf("\n");
-    
-    clearList(myList);
+}
+
+int main(void)
+{
+    int numbers[] = {42, 23, 35, 5};
+    List *list = createList();
+
+    for (int i = 0; i < 4; i++)
+    {
+        list->add(list, &numbers[i]);
+    }
+    printList("Original list", list);
+
+    list->sort(list);
+    printList("Sorted list", list);
+
+    list->reverse(list);
+    printList("Reversed list", list);
+
+    int *popped = list->pop(list, 0);
+    printf("Popped element: %d\n", *popped);
+
+    list->remove(list, &numbers[1]);
+    printList("List after removing 23", list);
+
+    list->clear(list);
+    printf("List cleared, count: %d\n", list->count(list));
+
+    list->destroy(list);
     return 0;
 }
